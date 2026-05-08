@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Магазин{% endblock %}
+
+{% block content %}
+<!-- Hero секция с каруселью -->
+<div id="heroCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
+    </div>
+    <div class="carousel-inner">
+        <div class="carousel-item active">
+            <div class="bg-dark text-white p-5 text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h1 class="display-4">Добро пожаловать в наш магазин!</h1>
+                <p class="lead">Лучшие товары по лучшим ценам</p>
+                <a href="{{ url_for('main.catalog') }}" class="btn btn-light btn-lg">Перейти в каталог</a>
+            </div>
+        </div>
+        <div class="carousel-item">
+            <div class="bg-dark text-white p-5 text-center" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <h1 class="display-4">Скидки до 50%</h1>
+                <p class="lead">Только в этом месяце</p>
+                <a href="{{ url_for('main.catalog') }}" class="btn btn-light btn-lg">Успей купить</a>
+            </div>
+        </div>
+        <div class="carousel-item">
+            <div class="bg-dark text-white p-5 text-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <h1 class="display-4">Бесплатная доставка</h1>
+                <p class="lead">При заказе от 3000 рублей</p>
+                <a href="{{ url_for('main.catalog') }}" class="btn btn-light btn-lg">Подробнее</a>
+            </div>
+        </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+    </button>
+</div>
+
+<!-- Избранные товары -->
+{% if featured_products %}
+<div class="mb-5">
+    <h2 class="text-center mb-4">🔥 Избранные товары</h2>
+    <div class="row">
+        {% for product in featured_products %}
+        <div class="col-md-4 col-lg-2 mb-4">
+            <div class="card h-100 product-card">
+                {% if product.image_url %}
+                <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" style="height: 150px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 150px;">
+                    <span class="text-white">Нет фото</span>
+                </div>
+                {% endif %}
+                <div class="card-body text-center">
+                    <h6 class="card-title">{{ product.name[:40] }}</h6>
+                    <p class="card-text">
+                        <strong class="text-primary">{{ "%.2f"|format(product.price) }} ₽</strong>
+                        {% if product.old_price %}
+                        <br><small class="text-muted"><s>{{ "%.2f"|format(product.old_price) }} ₽</s></small>
+                        {% endif %}
+                    </p>
+                    <button class="btn btn-sm btn-primary add-to-cart" data-product-id="{{ product.id_product }}">
+                        В корзину
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Категории -->
+<div class="mb-5">
+    <h2 class="text-center mb-4">📚 Категории</h2>
+    <div class="row">
+        {% for category in categories %}
+        <div class="col-md-3 col-sm-6 mb-3">
+            <a href="{{ url_for('main.catalog', category=category.id_category) }}" class="text-decoration-none">
+                <div class="card text-center category-card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ category.name }}</h5>
+                        {% if category.description %}
+                        <p class="card-text small text-muted">{{ category.description[:50] }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Все товары -->
+<div>
+    <h2 class="text-center mb-4">🛍️ Новинки</h2>
+    <div class="row">
+        {% for product in products.items %}
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 product-card">
+                {% if product.image_url %}
+                <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <span class="text-white">Нет фото</span>
+                </div>
+                {% endif %}
+                
+                {% if product.old_price %}
+                <span class="badge bg-danger position-absolute top-0 end-0 m-2">-{{ ((1 - product.price/product.old_price) * 100)|round|int }}%</span>
+                {% endif %}
+                
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name[:50] }}</h5>
+                    <p class="card-text text-muted small">{{ product.description[:80] }}...</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong class="text-primary fs-5">{{ "%.2f"|format(product.price) }} ₽</strong>
+                            {% if product.old_price %}
+                            <br><small class="text-muted"><s>{{ "%.2f"|format(product.old_price) }} ₽</s></small>
+                            {% endif %}
+                        </div>
+                        <div class="btn-group-vertical">
+                            <a href="{{ url_for('main.product_detail', product_id=product.id_product) }}" class="btn btn-sm btn-outline-primary mb-1">Подробнее</a>
+                            <button class="btn btn-sm btn-success add-to-cart" data-product-id="{{ product.id_product }}">
+                                В корзину
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Пагинация -->
+    {% if products.pages > 1 %}
+    <nav aria-label="Навигация">
+        <ul class="pagination justify-content-center">
+            {% if products.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.index', page=products.prev_num) }}">« Предыдущая</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">« Предыдущая</span>
+            </li>
+            {% endif %}
+
+            {% for page_num in products.iter_pages() %}
+            {% if page_num %}
+            <li class="page-item {% if page_num == products.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('main.index', page=page_num) }}">{{ page_num }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">...</span>
+            </li>
+            {% endif %}
+            {% endfor %}
+
+            {% if products.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.index', page=products.next_num) }}">Следующая »</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Следующая »</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Добавление в корзину через AJAX
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', async function() {
+            const productId = this.dataset.productId;
+            const originalText = this.textContent;
+            
+            this.disabled = true;
+            this.textContent = 'Добавляю...';
+            
+            try {
+                const response = await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        product_id: parseInt(productId),
+                        quantity: 1
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    this.textContent = '✓ Добавлено!';
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-secondary');
+                    
+                    // Обновляем счетчик корзины в навигации
+                    if (data.cart_count !== undefined) {
+                        updateCartCounter(data.cart_count);
+                    }
+                    
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                        this.disabled = false;
+                        this.classList.remove('btn-secondary');
+                        this.classList.add('btn-success');
+                    }, 2000);
+                } else {
+                    alert(data.error || 'Ошибка при добавлении в корзину');
+                    this.textContent = originalText;
+                    this.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Ошибка при добавлении в корзину');
+                this.textContent = originalText;
+                this.disabled = false;
+            }
+        });
+    });
+    
+    function updateCartCounter(count) {
+        // Ищем элемент счетчика корзины в навигации
+        let cartBadge = document.querySelector('.cart-badge');
+        if (!cartBadge) {
+            const cartLink = document.querySelector('a[href*="cart"]');
+            if (cartLink) {
+                cartBadge = document.createElement('span');
+                cartBadge.className = 'badge bg-danger rounded-pill cart-badge';
+                cartLink.appendChild(cartBadge);
+            }
+        }
+        
+        if (cartBadge) {
+            if (count > 0) {
+                cartBadge.textContent = count;
+                cartBadge.style.display = 'inline-block';
+            } else {
+                cartBadge.style.display = 'none';
+            }
+        }
+    }
+    
+    // Проверяем авторизацию при клике
+    document.querySelectorAll('.add-to-cart').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            const isAuthenticated = {{ current_user.is_authenticated|tojson }};
+            if (!isAuthenticated) {
+                e.preventDefault();
+                if (confirm('Для добавления товаров в корзину необходимо войти в систему. Перейти на страницу входа?')) {
+                    window.location.href = "{{ url_for('main.login') }}";
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
