@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+
+{% block title %}Оформление заказа - Магазин{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-credit-card me-2"></i>Оформление заказа
+        </h1>
+        
+        {% if cart_items %}
+        <div class="row">
+            <!-- Форма оформления заказа -->
+            <div class="col-lg-7 mb-4">
+                <form method="POST" id="checkout-form">
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-user me-2"></i>Контактная информация</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="full_name" class="form-label">Полное имя *</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" 
+                                           value="{{ current_user.full_name or '' }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label">Телефон *</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           placeholder="+7 (999) 123-45-67" required>
+                                    <small class="text-muted">Для связи по заказу</small>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ current_user.email or '' }}" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Адрес доставки</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="shipping_address" class="form-label">Адрес доставки *</label>
+                                <textarea class="form-control" id="shipping_address" name="shipping_address" 
+                                          rows="3" placeholder="Индекс, город, улица, дом, квартира" required></textarea>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="same-address" checked>
+                                <label class="form-check-label" for="same-address">
+                                    Адрес совпадает с адресом для выставления счета
+                                </label>
+                            </div>
+                            <div id="billing-address-container" style="display: none;">
+                                <label for="billing_address" class="form-label">Адрес для выставления счета</label>
+                                <textarea class="form-control" id="billing_address" name="billing_address" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-truck me-2"></i>Способ доставки</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="delivery_method" id="delivery-courier" 
+                                       value="courier" checked>
+                                <label class="form-check-label" for="delivery-courier">
+                                    <strong>Курьерская доставка</strong>
+                                    <span class="text-muted d-block">Бесплатно при заказе от 3000 ₽, иначе 300 ₽</span>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="delivery_method" id="delivery-pickup" 
+                                       value="pickup">
+                                <label class="form-check-label" for="delivery-pickup">
+                                    <strong>Самовывоз</strong>
+                                    <span class="text-muted d-block">Бесплатно, из пункта выдачи</span>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="delivery_method" id="delivery-post" 
+                                       value="post">
+                                <label class="form-check-label" for="delivery-post">
+                                    <strong>Почта России</strong>
+                                    <span class="text-muted d-block">350 ₽, срок доставки 3-7 дней</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Способ оплаты</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method" id="payment-card" 
+                                       value="card" checked>
+                                <label class="form-check-label" for="payment-card">
+                                    <strong>Банковская карта онлайн</strong>
+                                    <span class="text-muted d-block">Visa, MasterCard, МИР</span>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method" id="payment-cash" 
+                                       value="cash">
+                                <label class="form-check-label" for="payment-cash">
+                                    <strong>Наличными при получении</strong>
+                                    <span class="text-muted d-block">Только для курьерской доставки</span>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method" id="payment-online" 
+                                       value="online">
+                                <label class="form-check-label" for="payment-online">
+                                    <strong>Онлайн кредит</strong>
+                                    <span class="text-muted d-block">Оплата частями</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-comment me-2"></i>Комментарий к заказу</h5>
+                        </div>
+                        <div class="card-body">
+                            <textarea class="form-control" id="comment" name="comment" rows="3" 
+                                      placeholder="Укажите дополнительную информацию к заказу (время доставки, домофон и т.д.)"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg" id="submit-order">
+                            <i class="fas fa-check-circle me-2"></i>Подтвердить заказ
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Информация о заказе -->
+            <div class="col-lg-5">
+                <div class="card sticky-top" style="top: 20px;">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Ваш заказ</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for item in cart_items %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <span class="badge bg-secondary me-2">{{ item.quantity }} шт.</span>
+                                        {{ item.product.name[:40] }}
+                                    </div>
+                                    <strong>{{ "%.2f"|format(item.product.price * item.quantity) }} ₽</strong>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Товары ({{ cart_items|sum(attribute='quantity') }} шт.):</span>
+                                <strong id="subtotal">{{ "%.2f"|format(total) }} ₽</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2" id="delivery-row">
+                                <span>Доставка:</span>
+                                <strong id="delivery-cost">Бесплатно</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2" id="discount-row" style="display: none;">
+                                <span class="text-success">Скидка по промокоду:</span>
+                                <strong class="text-success" id="discount-amount">0 ₽</strong>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="h5">Итого к оплате:</span>
+                                <strong class="h5 text-primary" id="total">{{ "%.2f"|format(total) }} ₽</strong>
+                            </div>
+                        </div>
+                        
+                        <!-- Промокод -->
+                        <div class="mb-3">
+                            <label for="promo-code" class="form-label">Промокод</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="promo-code" placeholder="Введите промокод">
+                                <button class="btn btn-outline-primary" id="apply-promo" type="button">
+                                    <i class="fas fa-gift"></i> Применить
+                                </button>
+                            </div>
+                            <div id="promo-message" class="small mt-1"></div>
+                        </div>
+                        
+                        <!-- Информация -->
+                        <div class="alert alert-info small">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Нажимая «Подтвердить заказ», вы соглашаетесь с условиями 
+                            <a href="#" class="alert-link">оферты</a> и 
+                            <a href="#" class="alert-link">политики обработки персональных данных</a>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Корзина пуста -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-shopping-cart fa-5x text-muted"></i>
+            </div>
+            <h3>Корзина пуста</h3>
+            <p class="text-muted">Добавьте товары в корзину, чтобы оформить заказ</p>
+            <a href="{{ url_for('main.catalog') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-search me-2"></i>Перейти в каталог
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentDiscount = 0;
+    let currentDeliveryCost = 0;
+    const subtotal = {{ total }};
+    
+    // Функция для пересчета итоговой суммы
+    function calculateTotal() {
+        const deliveryRow = document.getElementById('delivery-row');
+        const deliveryCostElement = document.getElementById('delivery-cost');
+        
+        // Определяем стоимость доставки
+        const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+        if (deliveryMethod) {
+            const method = deliveryMethod.value;
+            if (method === 'courier') {
+                currentDeliveryCost = subtotal >= 3000 ? 0 : 300;
+                deliveryCostElement.textContent = currentDeliveryCost === 0 ? 'Бесплатно' : `${currentDeliveryCost} ₽`;
+            } else if (method === 'pickup') {
+                currentDeliveryCost = 0;
+                deliveryCostElement.textContent = 'Бесплатно';
+            } else if (method === 'post') {
+                currentDeliveryCost = 350;
+                deliveryCostElement.textContent = `${currentDeliveryCost} ₽`;
+            }
+        }
+        
+        // Рассчитываем итог
+        const total = subtotal + currentDeliveryCost - currentDiscount;
+        document.getElementById('total').textContent = `${total.toFixed(2)} ₽`;
+        
+        return total;
+    }
+    
+    // Функция для применения промокода
+    async function applyPromoCode() {
+        const promoCode = document.getElementById('promo-code').value.trim();
+        const promoMessage = document.getElementById('promo-message');
+        const discountRow = document.getElementById('discount-row');
+        const discountAmount = document.getElementById('discount-amount');
+        
+        if (!promoCode) {
+            promoMessage.innerHTML = '<span class="text-warning">Введите промокод</span>';
+            return false;
+        }
+        
+        try {
+            const response = await fetch('/api/apply-promo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ promo_code: promoCode, subtotal: subtotal })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                currentDiscount = data.discount;
+                discountAmount.textContent = `${currentDiscount.toFixed(2)} ₽`;
+                discountRow.style.display = 'flex';
+                promoMessage.innerHTML = `<span class="text-success">✓ ${data.message}</span>`;
+                calculateTotal();
+                return true;
+            } else {
+                currentDiscount = 0;
+                discountRow.style.display = 'none';
+                promoMessage.innerHTML = `<span class="text-danger">✗ ${data.error}</span>`;
+                calculateTotal();
+                return false;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            promoMessage.innerHTML = '<span class="text-danger">Ошибка при проверке промокода</span>';
+            return false;
+        }
+    }
+    
+    // Валидация телефона
+    function validatePhone(phone) {
+        const phoneRegex = /^(\+7|7|8)?[\s\-]?\(?[489][0-9]{2}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/;
+        return phoneRegex.test(phone);
+    }
+    
+    // Валидация email
+    function validateEmail(email) {
+        const emailRegex = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
+        return emailRegex.test(email);
+    }
+    
+    // Валидация формы
+    function validateForm() {
+        const fullName = document.getElementById('full_name').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const shippingAddress = document.getElementById('shipping_address').value.trim();
+        
+        if (!fullName) {
+            alert('Пожалуйста, укажите ваше полное имя');
+            return false;
+        }
+        
+        if (!phone) {
+            alert('Пожалуйста, укажите номер телефона');
+            return false;
+        }
+        
+        if (!validatePhone(phone)) {
+            alert('Пожалуйста, укажите корректный номер телефона');
+            return false;
+        }
+        
+        if (!email) {
+            alert('Пожалуйста, укажите email');
+            return false;
+        }
+        
+        if (!validateEmail(email)) {
+            alert('Пожалуйста, укажите корректный email');
+            return false;
+        }
+        
+        if (!shippingAddress) {
+            alert('Пожалуйста, укажите адрес доставки');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    // Обработчики событий
+    if (document.getElementById('checkout-form')) {
+        // Изменение способа доставки
+        document.querySelectorAll('input[name="delivery_method"]').forEach(radio => {
+            radio.addEventListener('change', calculateTotal);
+        });
+        
+        // Изменение способа оплаты
+        document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked');
+                if (this.value === 'cash' && deliveryMethod && deliveryMethod.value !== 'courier') {
+                    alert('Оплата наличными доступна только для курьерской доставки');
+                    document.getElementById('payment-card').checked = true;
+                }
+            });
+        });
+        
+        // Чекбокс совпадения адресов
+        const sameAddressCheckbox = document.getElementById('same-address');
+        const billingContainer = document.getElementById('billing-address-container');
+        
+        sameAddressCheckbox.addEventListener('change', function() {
+            billingContainer.style.display = this.checked ? 'none' : 'block';
+        });
+        
+        // Кнопка применения промокода
+        const applyPromoBtn = document.getElementById('apply-promo');
+        if (applyPromoBtn) {
+            applyPromoBtn.addEventListener('click', applyPromoCode);
+        }
+        
+        // Enter в поле промокода
+        document.getElementById('promo-code').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyPromoCode();
+            }
+        });
+        
+        // Отправка формы
+        const form = document.getElementById('checkout-form');
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                return;
+            }
+            
+            const submitBtn = document.getElementById('submit-order');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Обработка...';
+            
+            // Собираем данные формы
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            data.total = calculateTotal();
+            data.delivery_cost = currentDeliveryCost;
+            data.discount = currentDiscount;
+            
+            // Если адрес доставки совпадает с платежным
+            if (document.getElementById('same-address').checked) {
+                data.billing_address = data.shipping_address;
+            }
+            
+            try {
+                const response = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Перенаправление на страницу оплаты или успеха
+                    if (result.payment_url) {
+                        window.location.href = result.payment_url;
+                    } else {
+                        window.location.href = `/order/success/${result.order_id}`;
+                    }
+                } else {
+                    alert(result.error || 'Ошибка при оформлении заказа');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Ошибка при оформлении заказа');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+        
+        // Маска для телефона
+        const phoneInput = document.getElementById('phone');
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 11) value = value.slice(0, 11);
+            
+            let formatted = '';
+            if (value.length > 0) {
+                formatted = '+7';
+                if (value.length > 1) formatted += ` (${value.slice(1, 4)}`;
+                if (value.length > 4) formatted += `) ${value.slice(4, 7)}`;
+                if (value.length > 7) formatted += `-${value.slice(7, 9)}`;
+                if (value.length > 9) formatted += `-${value.slice(9, 11)}`;
+            }
+            
+            e.target.value = formatted;
+        });
+        
+        // Инициализация расчета
+        calculateTotal();
+    }
+</script>
+{% endblock %}
